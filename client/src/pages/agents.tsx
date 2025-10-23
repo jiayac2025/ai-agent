@@ -34,7 +34,9 @@ export default function Agents() {
 
   const deleteAgentMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/agents/${id}`, null);
+      const response = await apiRequest("DELETE", `/api/agents/${id}`, null);
+      // DELETE returns 204 No Content, so no JSON to parse
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
@@ -43,10 +45,10 @@ export default function Agents() {
         description: "The agent has been removed successfully.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Failed to delete agent",
-        description: "Please try again later.",
+        description: error?.message || "Please try again later.",
         variant: "destructive",
       });
     },

@@ -27,19 +27,21 @@ export default function Marketplace() {
 
   const installTemplateMutation = useMutation({
     mutationFn: async (template: Template) => {
-      return await apiRequest("POST", "/api/agents/from-template", { templateId: template.id });
+      const response = await apiRequest("POST", "/api/agents/from-template", { templateId: template.id });
+      return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (agent: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/templates"] });
       toast({
         title: "Template installed",
-        description: "Agent created successfully from template.",
+        description: `Agent "${agent.name}" created successfully from template.`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Installation failed",
-        description: "Please try again later.",
+        description: error?.message || "Please try again later.",
         variant: "destructive",
       });
     },

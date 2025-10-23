@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Task, Agent } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 
 const statusIcons = {
   pending: Clock,
@@ -45,10 +47,12 @@ const statusColors = {
 
 export default function Tasks() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState("");
-  const [taskInput, setTaskInput] = useState("");
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
 
   const { data: tasks, isLoading: tasksLoading } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
@@ -58,6 +62,39 @@ export default function Tasks() {
     queryKey: ["/api/agents"],
   });
 
+  const createTaskMutation = useMutation({
+    mutationFn: async (data: { title: string; description?: string; agentIds: string[] }) => {
+      const response = await apiRequest("POST", "/api/tasks", {
+        title: data.title,
+        description: data.description,
+        status: "pending",
+        agentIds: data.agentIds,
+        progress: 0,
+        cost: 0,
+      });
+      return await response.json();
+    },
+    onSuccess: (task: Task) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: "Task created",
+        description: "Your task has been created successfully.",
+      });
+      setCreateDialogOpen(false);
+      setSelectedAgent("");
+      setTaskTitle("");
+      setTaskDescription("");
+      setLocation(`/tasks/execute?agentId=${task.agentIds[0]}`);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create task",
+        description: error?.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredTasks = (tasks || []).filter((task) => {
     return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -65,8 +102,14 @@ export default function Tasks() {
 
   const handleCreateTask = () => {
     if (selectedAgent) {
-      setLocation(`/tasks/execute?agentId=${selectedAgent}`);
-      setCreateDialogOpen(false);
+      const agent = agents?.find(a => a.id === selectedAgent);
+      const title = taskTitle.trim() || `Task with ${agent?.name || 'Agent'}`;
+      
+      createTaskMutation.mutate({
+        title,
+        description: taskDescription.trim() || undefined,
+        agentIds: [selectedAgent],
+      });
     }
   };
 
@@ -95,7 +138,7 @@ export default function Tasks() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="agent">Select Agent</Label>
+                <Label htmlFor="agent">Select Agent *</Label>
                 <Select value={selectedAgent} onValueChange={setSelectedAgent}>
                   <SelectTrigger id="agent" data-testid="select-task-agent">
                     <SelectValue placeholder="Choose an agent" />
@@ -110,28 +153,46 @@ export default function Tasks() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="input">Task Description (Optional)</Label>
+                <Label htmlFor="title">Task Title (Optional)</Label>
+                <Input
+                  id="title"
+                  placeholder="e.g., Analyze customer feedback..."
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  data-testid="input-task-title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Task Description (Optional)</Label>
                 <Textarea
-                  id="input"
+                  id="description"
                   placeholder="Describe what you want the agent to do..."
                   rows={3}
-                  value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
+                  value={taskDescription}
+                  onChange={(e) => setTaskDescription(e.target.value)}
                   data-testid="input-task-description"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCreateDialogOpen(false);
+                  setSelectedAgent("");
+                  setTaskTitle("");
+                  setTaskDescription("");
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateTask}
-                disabled={!selectedAgent}
+                disabled={!selectedAgent || createTaskMutation.isPending}
                 data-testid="button-start-task"
               >
                 <Play className="h-4 w-4 mr-2" />
-                Start Task
+                {createTaskMutation.isPending ? "Creating..." : "Start Task"}
               </Button>
             </div>
           </DialogContent>

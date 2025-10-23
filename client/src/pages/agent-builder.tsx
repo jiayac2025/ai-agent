@@ -52,7 +52,8 @@ export default function AgentBuilder() {
 
   const createAgentMutation = useMutation({
     mutationFn: async (data: InsertAgent) => {
-      return await apiRequest("POST", "/api/agents", data);
+      const response = await apiRequest("POST", "/api/agents", data);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
@@ -62,10 +63,10 @@ export default function AgentBuilder() {
       });
       setLocation("/agents");
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Failed to create agent",
-        description: "Please try again later.",
+        description: error?.message || "Please try again later.",
         variant: "destructive",
       });
     },
