@@ -169,7 +169,7 @@ export default function Agents() {
               agent={agent}
               onEdit={() => {}}
               onDelete={() => deleteAgentMutation.mutate(agent.id)}
-              onExecute={() => setLocation(`/tasks/new?agentId=${agent.id}`)}
+              onExecute={() => setLocation(`/tasks/execute?agentId=${agent.id}`)}
             />
           ))}
         </div>
