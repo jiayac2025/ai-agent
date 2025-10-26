@@ -16,7 +16,7 @@ export const taskStatusTypes = ["pending", "running", "completed", "failed", "ca
 export type TaskStatus = typeof taskStatusTypes[number];
 
 // Tool types that agents can use
-export const toolTypes = ["web-search", "code-execution", "file-access", "api-call", "data-analysis", "image-generation"] as const;
+export const toolTypes = ["web-search", "code-execution", "file-access", "api-call", "data-analysis", "image-generation", "mcp"] as const;
 export type ToolType = typeof toolTypes[number];
 
 // AI Model types
@@ -168,3 +168,45 @@ export interface AgentUsage {
   avgExecutionTime: number;
   totalCost: number;
 }
+
+// Workflow execution types
+export const workflowExecutionTypes = ["sequential", "parallel"] as const;
+export type WorkflowExecutionType = typeof workflowExecutionTypes[number];
+
+// Workflow status types
+export const workflowStatusTypes = ["draft", "active", "paused", "archived"] as const;
+export type WorkflowStatus = typeof workflowStatusTypes[number];
+
+// Workflow node representing a step in the workflow
+export interface WorkflowNode {
+  id: string;
+  agentId: string;
+  order: number;
+  condition?: string; // Optional condition for conditional execution
+}
+
+// Workflows table
+export const workflows = pgTable("workflows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  executionType: text("execution_type").notNull().$type<WorkflowExecutionType>().default("sequential"),
+  status: text("status").notNull().$type<WorkflowStatus>().default("draft"),
+  nodes: jsonb("nodes").$type<WorkflowNode[]>().notNull(),
+  createdBy: text("created_by"),
+  usageCount: integer("usage_count").default(0),
+  lastExecuted: timestamp("last_executed"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowSchema = createInsertSchema(workflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  usageCount: true,
+  lastExecuted: true,
+});
+
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+export type Workflow = typeof workflows.$inferSelect;

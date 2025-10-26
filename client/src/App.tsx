@@ -13,6 +13,8 @@ import Agents from "@/pages/agents";
 import Tasks from "@/pages/tasks";
 import TaskExecute from "@/pages/task-execute";
 import Chat from "@/pages/chat";
+import Workflows from "@/pages/workflows";
+import WorkflowBuilder from "@/pages/workflow-builder";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,10 +22,14 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/builder" component={AgentBuilder} />
+      <Route path="/builder/:id" component={AgentBuilder} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/agents" component={Agents} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/tasks/execute" component={TaskExecute} />
+      <Route path="/workflows" component={Workflows} />
+      <Route path="/workflows/builder" component={WorkflowBuilder} />
+      <Route path="/workflows/builder/:id" component={WorkflowBuilder} />
       <Route path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>

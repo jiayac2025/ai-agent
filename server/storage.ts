@@ -7,6 +7,8 @@ import {
   type InsertTemplate,
   type Message,
   type InsertMessage,
+  type Workflow,
+  type InsertWorkflow,
   type AgentStatistics,
   type UsageData,
   type AgentUsage,
@@ -37,6 +39,13 @@ export interface IStorage {
   createTemplate(template: InsertTemplate): Promise<Template>;
   incrementTemplateDownloads(id: string): Promise<void>;
   
+  // Workflows
+  getWorkflows(): Promise<Workflow[]>;
+  getWorkflow(id: string): Promise<Workflow | undefined>;
+  createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+  updateWorkflow(id: string, workflow: Partial<Workflow>): Promise<Workflow | undefined>;
+  deleteWorkflow(id: string): Promise<boolean>;
+  
   // Statistics
   getStatistics(): Promise<AgentStatistics>;
   getUsageData(): Promise<UsageData[]>;
@@ -48,12 +57,14 @@ export class MemStorage implements IStorage {
   private tasks: Map<string, Task>;
   private messages: Map<string, Message>;
   private templates: Map<string, Template>;
+  private workflows: Map<string, Workflow>;
 
   constructor() {
     this.agents = new Map();
     this.tasks = new Map();
     this.messages = new Map();
     this.templates = new Map();
+    this.workflows = new Map();
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -483,6 +494,48 @@ export class MemStorage implements IStorage {
         avgExecutionTime: Math.floor(Math.random() * 2000) + 500,
         totalCost: Math.floor(Math.random() * 100) + 50,
       }));
+  }
+
+  // Workflow methods
+  async getWorkflows(): Promise<Workflow[]> {
+    return Array.from(this.workflows.values()).sort((a, b) => 
+      (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
+    );
+  }
+
+  async getWorkflow(id: string): Promise<Workflow | undefined> {
+    return this.workflows.get(id);
+  }
+
+  async createWorkflow(insertWorkflow: InsertWorkflow): Promise<Workflow> {
+    const id = randomUUID();
+    const workflow: Workflow = {
+      ...insertWorkflow,
+      id,
+      usageCount: 0,
+      lastExecuted: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.workflows.set(id, workflow);
+    return workflow;
+  }
+
+  async updateWorkflow(id: string, updates: Partial<Workflow>): Promise<Workflow | undefined> {
+    const workflow = this.workflows.get(id);
+    if (!workflow) return undefined;
+
+    const updatedWorkflow = {
+      ...workflow,
+      ...updates,
+      updatedAt: new Date(),
+    };
+    this.workflows.set(id, updatedWorkflow);
+    return updatedWorkflow;
+  }
+
+  async deleteWorkflow(id: string): Promise<boolean> {
+    return this.workflows.delete(id);
   }
 }
 

@@ -43,10 +43,27 @@ AgentOS is a comprehensive enterprise-level AI Agent management platform designe
 - Usage statistics per agent
 - Status management (active, inactive, testing, archived)
 
-### 5. Multi-Agent Orchestration
-- Planned: Visual workflow canvas for multi-agent collaboration
-- Agent task chaining and conditional logic
-- Workflow templates
+### 5. Multi-Agent Workflow Orchestration
+
+**Phase 1: Configuration & Management** ✅
+- Create workflows with multiple agents
+- Define execution types (sequential, parallel)
+- Manage workflow status (draft, active, paused, archived)
+- Agent selection and ordering interface
+- Form-based builder with add/remove/reorder controls
+- Full CRUD operations (create, read, update, delete)
+- Search and filter workflows
+- Empty state handling
+
+**Phase 2: Execution Engine** 🔄 (Planned)
+- Workflow execution API endpoint
+- Real-time execution monitoring UI
+- Agent output passing between nodes
+- Conditional branching logic
+- Execution history and logs
+- Progress tracking and status updates
+- Visual workflow canvas with drag-and-drop
+- Workflow templates and presets
 
 ### 6. AI Agent Consultant
 - **NEW**: Conversational AI consultant to guide enterprise users in building AI agents
@@ -165,6 +182,26 @@ AgentOS is a comprehensive enterprise-level AI Agent management platform designe
 - [x] JSON response parsing in mutations
 - [x] End-to-end testing with Playwright
 - [x] All core user journeys validated
+- [x] Edit agent functionality tested and working
+- [x] Workflow configuration tested and working
+
+### Phase 4: Edit & Workflow Configuration ✅
+- [x] Edit agent functionality with pre-population
+- [x] Workflow schema and data model
+- [x] Workflow CRUD backend (storage + routes)
+- [x] Workflows list page with search
+- [x] Workflow builder page (form-based)
+- [x] Agent selection and reordering
+- [x] Workflow management (edit, delete)
+- [x] Sidebar navigation integration
+
+### Phase 5: Workflow Execution (Next)
+- [ ] Workflow execution API endpoint
+- [ ] Execution engine for sequential/parallel flows
+- [ ] Real-time execution monitoring UI
+- [ ] Progress tracking and status updates
+- [ ] Execution history and logs
+- [ ] Agent output passing between nodes
 
 ## AI Agent Platform Insights
 

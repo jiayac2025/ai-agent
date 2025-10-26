@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Sparkles,
   Settings,
+  GitBranch,
 } from "lucide-react";
 import {
   Sidebar,
@@ -47,6 +48,11 @@ const menuItems = [
     title: "My Agents",
     url: "/agents",
     icon: Network,
+  },
+  {
+    title: "Workflows",
+    url: "/workflows",
+    icon: GitBranch,
   },
   {
     title: "Tasks",

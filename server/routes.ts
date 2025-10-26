@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAgentSchema, insertTaskSchema, insertTemplateSchema, insertMessageSchema } from "@shared/schema";
+import { insertAgentSchema, insertTaskSchema, insertTemplateSchema, insertMessageSchema, insertWorkflowSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -43,7 +43,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/agents/:id", async (req, res) => {
     try {
-      const agent = await storage.updateAgent(req.params.id, req.body);
+      const result = insertAgentSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+
+      const agent = await storage.updateAgent(req.params.id, result.data);
       if (!agent) {
         return res.status(404).json({ error: "Agent not found" });
       }
@@ -235,6 +240,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(topAgents);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch top agents" });
+    }
+  });
+
+  // Workflow Routes
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const workflows = await storage.getWorkflows();
+      res.json(workflows);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  app.get("/api/workflows/:id", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflow(req.params.id);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  app.post("/api/workflows", async (req, res) => {
+    try {
+      const result = insertWorkflowSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+
+      const workflow = await storage.createWorkflow(result.data);
+      res.status(201).json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create workflow" });
+    }
+  });
+
+  app.put("/api/workflows/:id", async (req, res) => {
+    try {
+      const result = insertWorkflowSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: fromZodError(result.error).message });
+      }
+
+      const workflow = await storage.updateWorkflow(req.params.id, result.data);
+      if (!workflow) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update workflow" });
+    }
+  });
+
+  app.delete("/api/workflows/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteWorkflow(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Workflow not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete workflow" });
     }
   });
 

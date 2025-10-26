@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { insertAgentSchema, type InsertAgent, toolTypes, agentStatusTypes } from "@shared/schema";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { insertAgentSchema, type InsertAgent, type Agent, toolTypes, agentStatusTypes } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,18 +16,22 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bot, Sparkles, Wrench, FileJson, TestTube, Save, Play, Code } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { z } from "zod";
 
 const formSchema = insertAgentSchema.extend({
   name: z.string().min(1, "Name is required").max(100),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  systemPrompt: z.string().min(20, "System prompt must be at least 20 characters"),
+  description: z.string().min(1, "Description is required"),
+  systemPrompt: z.string().min(1, "System prompt is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 export default function AgentBuilder() {
+  const [, params] = useRoute("/builder/:id");
+  const agentId = params?.id;
+  const isEditMode = !!agentId;
+  
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
@@ -36,6 +40,12 @@ export default function AgentBuilder() {
   const [inputSchemaText, setInputSchemaText] = useState("");
   const [outputSchemaText, setOutputSchemaText] = useState("");
   const [schemaErrors, setSchemaErrors] = useState<{ input?: string; output?: string }>({});
+
+  const { data: existingAgent, isLoading: isLoadingAgent } = useQuery<Agent>({
+    queryKey: ["/api/agents", agentId],
+    enabled: isEditMode,
+    retry: false,
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -53,6 +63,34 @@ export default function AgentBuilder() {
     },
   });
 
+  // Populate form when editing an existing agent
+  useEffect(() => {
+    if (existingAgent && isEditMode) {
+      form.reset({
+        name: existingAgent.name,
+        description: existingAgent.description,
+        systemPrompt: existingAgent.systemPrompt,
+        source: existingAgent.source,
+        status: existingAgent.status,
+        category: existingAgent.category || "",
+        tools: existingAgent.tools || [],
+        capabilities: existingAgent.capabilities || [],
+        icon: existingAgent.icon || "",
+        rating: existingAgent.rating || 0,
+      });
+      
+      setSelectedTools(existingAgent.tools || []);
+      
+      if (existingAgent.inputSchema) {
+        setInputSchemaText(JSON.stringify(existingAgent.inputSchema, null, 2));
+      }
+      
+      if (existingAgent.outputSchema) {
+        setOutputSchemaText(JSON.stringify(existingAgent.outputSchema, null, 2));
+      }
+    }
+  }, [existingAgent, isEditMode, form]);
+
   const createAgentMutation = useMutation({
     mutationFn: async (data: InsertAgent) => {
       const response = await apiRequest("POST", "/api/agents", data);
@@ -69,6 +107,29 @@ export default function AgentBuilder() {
     onError: (error: any) => {
       toast({
         title: "Failed to create agent",
+        description: error?.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateAgentMutation = useMutation({
+    mutationFn: async (data: InsertAgent) => {
+      const response = await apiRequest("PUT", `/api/agents/${agentId}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents", agentId] });
+      toast({
+        title: "Agent updated successfully",
+        description: "Your changes have been saved.",
+      });
+      setLocation("/agents");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update agent",
         description: error?.message || "Please try again later.",
         variant: "destructive",
       });
@@ -102,7 +163,12 @@ export default function AgentBuilder() {
         inputSchema,
         outputSchema,
       };
-      createAgentMutation.mutate(agentData);
+      
+      if (isEditMode) {
+        updateAgentMutation.mutate(agentData);
+      } else {
+        createAgentMutation.mutate(agentData);
+      }
     } catch (error: any) {
       toast({
         title: "Schema validation failed",
@@ -112,18 +178,35 @@ export default function AgentBuilder() {
     }
   };
 
+  const isSubmitting = createAgentMutation.isPending || updateAgentMutation.isPending;
+
   const handleTest = () => {
     setTestOutput(`Testing agent "${form.watch("name")}"...\n\nAgent response: This is a simulated response based on the system prompt and configuration. In production, this would interact with the actual AI model.`);
   };
 
   const watchedValues = form.watch();
 
+  if (isEditMode && isLoadingAgent) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading agent...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight" data-testid="page-title">Agent Builder</h1>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="page-title">
+          {isEditMode ? "Edit Agent" : "Agent Builder"}
+        </h1>
         <p className="text-muted-foreground mt-1">
-          Create and configure custom AI agents for your organization
+          {isEditMode 
+            ? "Update your agent configuration and settings" 
+            : "Create and configure custom AI agents for your organization"}
         </p>
       </div>
 
@@ -467,11 +550,13 @@ export default function AgentBuilder() {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={createAgentMutation.isPending}
+                disabled={isSubmitting}
                 data-testid="button-create-agent"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {createAgentMutation.isPending ? "Creating..." : "Create Agent"}
+                {isSubmitting 
+                  ? (isEditMode ? "Updating..." : "Creating...") 
+                  : (isEditMode ? "Update Agent" : "Create Agent")}
               </Button>
               <Button
                 type="button"

@@ -5,7 +5,7 @@ import { AgentCard } from "@/components/agent-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, Grid3x3, List, Activity } from "lucide-react";
+import { Plus, Search, Filter, Grid3x3, List, Activity, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -167,7 +167,7 @@ export default function Agents() {
             <AgentCard
               key={agent.id}
               agent={agent}
-              onEdit={() => {}}
+              onEdit={() => setLocation(`/builder/${agent.id}`)}
               onDelete={() => deleteAgentMutation.mutate(agent.id)}
               onExecute={() => setLocation(`/tasks/execute?agentId=${agent.id}`)}
             />
@@ -203,15 +203,26 @@ export default function Agents() {
                   <TableCell className="text-muted-foreground">{agent.category || "—"}</TableCell>
                   <TableCell className="text-right">{agent.usageCount || 0}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteAgentMutation.mutate(agent.id)}
-                      disabled={deleteAgentMutation.isPending}
-                      data-testid={`button-delete-${agent.id}`}
-                    >
-                      Delete
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLocation(`/builder/${agent.id}`)}
+                        data-testid={`button-edit-${agent.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteAgentMutation.mutate(agent.id)}
+                        disabled={deleteAgentMutation.isPending}
+                        data-testid={`button-delete-${agent.id}`}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
