@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bot, Sparkles, Wrench, FileJson, TestTube, Save, Play } from "lucide-react";
+import { Bot, Sparkles, Wrench, FileJson, TestTube, Save, Play, Code } from "lucide-react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 
@@ -33,6 +33,9 @@ export default function AgentBuilder() {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [testInput, setTestInput] = useState("");
   const [testOutput, setTestOutput] = useState("");
+  const [inputSchemaText, setInputSchemaText] = useState("");
+  const [outputSchemaText, setOutputSchemaText] = useState("");
+  const [schemaErrors, setSchemaErrors] = useState<{ input?: string; output?: string }>({});
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -72,12 +75,41 @@ export default function AgentBuilder() {
     },
   });
 
+  const validateAndParseSchema = (schemaText: string, type: "input" | "output"): Record<string, any> | undefined => {
+    if (!schemaText.trim()) {
+      return undefined;
+    }
+
+    try {
+      const parsed = JSON.parse(schemaText);
+      setSchemaErrors((prev) => ({ ...prev, [type]: undefined }));
+      return parsed;
+    } catch (error) {
+      const errorMsg = `Invalid JSON format`;
+      setSchemaErrors((prev) => ({ ...prev, [type]: errorMsg }));
+      throw new Error(errorMsg);
+    }
+  };
+
   const onSubmit = (data: FormData) => {
-    const agentData: InsertAgent = {
-      ...data,
-      tools: selectedTools as any,
-    };
-    createAgentMutation.mutate(agentData);
+    try {
+      const inputSchema = validateAndParseSchema(inputSchemaText, "input");
+      const outputSchema = validateAndParseSchema(outputSchemaText, "output");
+
+      const agentData: InsertAgent = {
+        ...data,
+        tools: selectedTools as any,
+        inputSchema,
+        outputSchema,
+      };
+      createAgentMutation.mutate(agentData);
+    } catch (error: any) {
+      toast({
+        title: "Schema validation failed",
+        description: error?.message || "Please fix the schema errors before submitting.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTest = () => {
@@ -100,7 +132,7 @@ export default function AgentBuilder() {
         <div className="lg:col-span-2">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basic" data-testid="tab-basic">
                   <Sparkles className="h-4 w-4 mr-2" />
                   Basic Info
@@ -112,6 +144,10 @@ export default function AgentBuilder() {
                 <TabsTrigger value="tools" data-testid="tab-tools">
                   <Wrench className="h-4 w-4 mr-2" />
                   Tools
+                </TabsTrigger>
+                <TabsTrigger value="schema" data-testid="tab-schema">
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Schema
                 </TabsTrigger>
                 <TabsTrigger value="test" data-testid="tab-test">
                   <TestTube className="h-4 w-4 mr-2" />
@@ -259,6 +295,133 @@ export default function AgentBuilder() {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="schema" className="space-y-4 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Input/Output Schema</CardTitle>
+                    <CardDescription>
+                      Define the structure of data your agent expects and returns
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="inputSchema">Input Schema (JSON)</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setInputSchemaText(JSON.stringify({
+                              type: "object",
+                              properties: {
+                                query: {
+                                  type: "string",
+                                  description: "User query or request"
+                                },
+                                context: {
+                                  type: "object",
+                                  description: "Additional context data"
+                                }
+                              },
+                              required: ["query"]
+                            }, null, 2));
+                          }}
+                          data-testid="button-use-input-template"
+                        >
+                          <Code className="h-3 w-3 mr-1" />
+                          Use Template
+                        </Button>
+                      </div>
+                      <Textarea
+                        id="inputSchema"
+                        placeholder='{\n  "type": "object",\n  "properties": {\n    "query": { "type": "string" }\n  }\n}'
+                        rows={10}
+                        className="font-mono text-sm"
+                        value={inputSchemaText}
+                        onChange={(e) => {
+                          setInputSchemaText(e.target.value);
+                          setSchemaErrors((prev) => ({ ...prev, input: undefined }));
+                        }}
+                        data-testid="input-schema-json"
+                      />
+                      {schemaErrors.input && (
+                        <p className="text-sm text-destructive">{schemaErrors.input}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Optional: Define expected input using JSON Schema format
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="outputSchema">Output Schema (JSON)</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setOutputSchemaText(JSON.stringify({
+                              type: "object",
+                              properties: {
+                                response: {
+                                  type: "string",
+                                  description: "Agent's response text"
+                                },
+                                confidence: {
+                                  type: "number",
+                                  description: "Confidence score (0-1)"
+                                },
+                                metadata: {
+                                  type: "object",
+                                  description: "Additional metadata"
+                                }
+                              },
+                              required: ["response"]
+                            }, null, 2));
+                          }}
+                          data-testid="button-use-output-template"
+                        >
+                          <Code className="h-3 w-3 mr-1" />
+                          Use Template
+                        </Button>
+                      </div>
+                      <Textarea
+                        id="outputSchema"
+                        placeholder='{\n  "type": "object",\n  "properties": {\n    "response": { "type": "string" }\n  }\n}'
+                        rows={10}
+                        className="font-mono text-sm"
+                        value={outputSchemaText}
+                        onChange={(e) => {
+                          setOutputSchemaText(e.target.value);
+                          setSchemaErrors((prev) => ({ ...prev, output: undefined }));
+                        }}
+                        data-testid="output-schema-json"
+                      />
+                      {schemaErrors.output && (
+                        <p className="text-sm text-destructive">{schemaErrors.output}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Optional: Define expected output using JSON Schema format
+                      </p>
+                    </div>
+
+                    <div className="rounded-md bg-muted p-4 space-y-2">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <FileJson className="h-4 w-4" />
+                        About Schemas
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Schemas help validate data and provide clear contracts for your agent's inputs and outputs. They're optional but recommended for production agents.
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Use JSON Schema format to describe the structure, types, and requirements of your data.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="test" className="space-y-4 mt-6">
                 <Card>
                   <CardHeader>
@@ -388,6 +551,26 @@ export default function AgentBuilder() {
                     <p className="text-xs text-muted-foreground">System Prompt Preview:</p>
                     <div className="rounded-md bg-muted p-3 text-xs font-mono line-clamp-6">
                       {watchedValues.systemPrompt}
+                    </div>
+                  </div>
+                )}
+
+                {(inputSchemaText || outputSchemaText) && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Schema Configured:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {inputSchemaText && (
+                        <Badge variant="secondary" className="text-xs">
+                          <FileJson className="h-3 w-3 mr-1" />
+                          Input Schema
+                        </Badge>
+                      )}
+                      {outputSchemaText && (
+                        <Badge variant="secondary" className="text-xs">
+                          <FileJson className="h-3 w-3 mr-1" />
+                          Output Schema
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 )}

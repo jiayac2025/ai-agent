@@ -18,6 +18,11 @@ AgentOS is a comprehensive enterprise-level AI Agent management platform designe
   - Basic Info (name, description, category, status)
   - System Prompt (detailed AI behavior configuration)
   - Tool Bindings (web-search, code-execution, file-access, etc.)
+  - **Input/Output Schema** (define data contracts with JSON Schema format)
+    - Template buttons for quick-start schemas
+    - Real-time JSON validation
+    - Optional but recommended for production agents
+    - Live preview badges when schemas are configured
   - Testing Interface (validate agent before deployment)
 - Live preview of agent configuration
 - Form validation with Zod schemas
@@ -192,6 +197,10 @@ The AI Agent platform represents a significant opportunity in several key areas:
 - ✅ Integration with Agent Builder and resource navigation
 - ✅ Support for top-tier AI models (GPT-4 Turbo, Claude 3.5 Sonnet, Gemini Pro)
 - ✅ Professional consultant UI optimized for enterprise guidance
+- ✅ **NEW**: Input/Output Schema section in Agent Builder
+- ✅ JSON Schema format support with template generators
+- ✅ Real-time schema validation with helpful error messages
+- ✅ Live preview integration showing configured schemas
 
 ### Future Enhancements
 1. Real AI model API integration (replace simulated responses)
