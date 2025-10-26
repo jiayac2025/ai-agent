@@ -12,6 +12,7 @@ import Marketplace from "@/pages/marketplace";
 import Agents from "@/pages/agents";
 import Tasks from "@/pages/tasks";
 import TaskExecute from "@/pages/task-execute";
+import Chat from "@/pages/chat";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/agents" component={Agents} />
       <Route path="/tasks" component={Tasks} />
       <Route path="/tasks/execute" component={TaskExecute} />
+      <Route path="/chat" component={Chat} />
       <Route component={NotFound} />
     </Switch>
   );

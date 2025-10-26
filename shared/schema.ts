@@ -19,6 +19,28 @@ export type TaskStatus = typeof taskStatusTypes[number];
 export const toolTypes = ["web-search", "code-execution", "file-access", "api-call", "data-analysis", "image-generation"] as const;
 export type ToolType = typeof toolTypes[number];
 
+// AI Model types
+export const aiModelTypes = [
+  "gpt-4",
+  "gpt-4-turbo", 
+  "gpt-3.5-turbo",
+  "claude-3.5-sonnet",
+  "claude-3-opus",
+  "claude-3-haiku",
+  "gemini-pro",
+  "llama-3-70b"
+] as const;
+export type AIModel = typeof aiModelTypes[number];
+
+export interface AIModelInfo {
+  id: AIModel;
+  name: string;
+  provider: string;
+  description: string;
+  contextWindow: number;
+  costPer1kTokens: number;
+}
+
 // Agents table
 export const agents = pgTable("agents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

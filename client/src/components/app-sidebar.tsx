@@ -5,6 +5,7 @@ import {
   Store,
   Network,
   MessageSquare,
+  Sparkles,
   Settings,
 } from "lucide-react";
 import {
@@ -26,6 +27,11 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "AI Chat",
+    url: "/chat",
+    icon: Sparkles,
   },
   {
     title: "Agent Builder",
