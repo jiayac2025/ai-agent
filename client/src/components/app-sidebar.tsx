@@ -29,7 +29,7 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "AI Chat",
+    title: "AI Agent Consultant",
     url: "/chat",
     icon: Sparkles,
   },

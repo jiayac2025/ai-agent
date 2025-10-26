@@ -43,23 +43,22 @@ AgentOS is a comprehensive enterprise-level AI Agent management platform designe
 - Agent task chaining and conditional logic
 - Workflow templates
 
-### 6. AI Chat (Direct Model Interaction)
-- **NEW**: Direct chat with AI models without creating agents
-- Model selection from 8+ AI providers:
-  - OpenAI: GPT-4 Turbo, GPT-4, GPT-3.5 Turbo
-  - Anthropic: Claude 3.5 Sonnet, Claude 3 Opus, Claude 3 Haiku
-  - Google: Gemini Pro
-  - Meta: Llama 3 70B
-- Detailed model information display:
-  - Provider name and branding
-  - Model description and use cases
-  - Context window size (tokens)
-  - Cost per 1K tokens
-- Real-time chat interface with message history
-- Loading states and empty states
-- Clear chat functionality
-- Professional message bubbles (user vs AI)
-- Enter to send, Shift+Enter for new line
+### 6. AI Agent Consultant
+- **NEW**: Conversational AI consultant to guide enterprise users in building AI agents
+- Expert guidance on:
+  - Choosing the right agent type for specific use cases
+  - Designing effective system prompts and behaviors
+  - Selecting appropriate tools and capabilities
+  - Best practices for agent deployment and optimization
+- Features:
+  - Intelligent context-aware responses based on user questions
+  - Suggested quick-start prompts for common scenarios
+  - Direct navigation to Agent Builder from consultation
+  - Model selection (GPT-4 Turbo, Claude 3.5 Sonnet, Gemini Pro)
+  - Welcome message introducing consultant capabilities
+  - Professional conversational interface
+  - Quick access to templates and existing agents
+  - Resource links for exploration
 
 ### 7. Task Execution Chat Interface
 - Real-time chat with AI agents
@@ -187,10 +186,12 @@ The AI Agent platform represents a significant opportunity in several key areas:
 - Professional UI/UX
 
 ### Recent Additions (Oct 2025)
-- ✅ AI Chat feature with direct model selection and conversation
-- ✅ Support for 8 AI models across 4 providers
-- ✅ Model information cards with context/cost details
-- ✅ Professional chat UI with loading and empty states
+- ✅ AI Agent Consultant feature for guiding enterprise users
+- ✅ Context-aware responses about agent types, prompts, and tools
+- ✅ Suggested quick-start prompts for common consultation scenarios
+- ✅ Integration with Agent Builder and resource navigation
+- ✅ Support for top-tier AI models (GPT-4 Turbo, Claude 3.5 Sonnet, Gemini Pro)
+- ✅ Professional consultant UI optimized for enterprise guidance
 
 ### Future Enhancements
 1. Real AI model API integration (replace simulated responses)
